@@ -1,0 +1,209 @@
+package esercitazione5;
+import Nodi.*;
+import javax.swing.*;
+import javax.swing.tree.MutableTreeNode;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
+
+terminal String MAIN, END, SEMI, INTEGER, BOOL, REAL, STRING, COMMA, ASSIGN, FUN, LPAR, RPAR, COLON,
+         OUT, IF, ELSE, THEN, WHILE, LOOP, READ, WRITE, WRITELN,WRITET, WRITEB, OUTPAR,
+         PLUS, MINUS, TIMES, DIV, DIVINT, AND, POW, STR_CONCAT, OR, GT, GE, LT, LE, EQ, NE, NOT, RETURN;
+terminal Bool TRUE, FALSE;
+terminal IntConst INTEGER_CONST;
+terminal RealConst REAL_CONST;
+terminal StringConst STRING_CONST;
+terminal String ID;
+terminal Var VAR;
+
+nonterminal Program Program;
+nonterminal VarDeclList VarDeclList;
+nonterminal Main Main;
+nonterminal FunList FunList;
+nonterminal VarDecl VarDecl;
+nonterminal Type Type;
+nonterminal IdListInit IdListInit;
+nonterminal IdListInitObbl IdListInitObbl;
+nonterminal Const Const;
+nonterminal Fun Fun;
+nonterminal ParamDeclList ParamDeclList;
+nonterminal NonEmptyParamDeclList NonEmptyParamDeclList;
+nonterminal ParDecl ParDecl;
+nonterminal StatList StatList;
+nonterminal Stat Stat;
+nonterminal IfStat IfStat;
+nonterminal Else Else;
+nonterminal WhileStat WhileStat;
+nonterminal ReadStat ReadStat;
+nonterminal IdList IdList;
+nonterminal WriteStat WriteStat;
+nonterminal AssignStat AssignStat;
+nonterminal CallFun CallFun;
+nonterminal ExprList ExprList;
+nonterminal Expr Expr;
+
+precedence left OR;
+precedence left AND;
+precedence right NOT;
+precedence nonassoc EQ, NE, LT, LE, GT, GE;
+precedence left STR_CONCAT;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV, DIVINT;
+precedence right POW;
+precedence left LPAR, RPAR;
+
+
+Program ::= VarDeclList:vdl FunList:fl Main:m   {: RESULT = new Program(vdl,fl,m); :}//TODO GESTIRE vardecllist e funlist vuota FA
+    ;
+
+VarDeclList::= /* empty */                                          {: RESULT = null;:}
+	| VarDeclList:vdl VarDecl:vd                                  {:  if(vdl == null)
+	                                                                        vdl = new VarDeclList(vd);
+	                                                                    else vdl.addNode(vd);
+                                                                        RESULT = vdl;:}
+    ;
+
+Main ::= MAIN VarDeclList:vdl StatList:sl END MAIN SEMI    {:   RESULT = new Main(vdl,sl); :}
+    ;
+
+FunList ::= /* empty */                                     {: RESULT = null; :}
+	| FunList:fl   Fun:f                                    {:  if(fl == null) fl = new FunList(f);
+                                                                else fl.addNode(f);
+	                                                            RESULT = fl;:}
+    ;
+
+
+VarDecl ::= Type:t IdListInit:idListInit SEMI         {:RESULT = new VarDecl(t,idListInit);:}
+   	| VAR:v IdListInitObbl:idListInitObbl SEMI          {:RESULT = new VarDecl(new Type(v),idListInitObbl);:}
+    ;
+
+Type ::= INTEGER:i          {:RESULT = new Type(i);:}
+| BOOL:b                    {:RESULT = new Type(b);:}
+| REAL:r                    {:RESULT = new Type(r);:}
+| STRING:s                  {:RESULT = new Type(s);:}
+    ;
+
+IdListInit ::= ID:id                                              {: RESULT = new IdListInit(new IdInit(new Identifier(id))); :}
+	| IdListInit:idListInit COMMA ID:id                           {: RESULT = idListInit.addNode(new IdInit(new Identifier(id))); :}
+	| ID:id ASSIGN Expr:expr                                      {: RESULT = new IdListInit(new IdInit(new Identifier(id) , expr)); :}
+	| IdListInit:idListInit COMMA ID:id ASSIGN Expr:expr          {: RESULT = idListInit.addNode(new IdInit(new Identifier(id) , expr)); :}
+    ;
+
+IdListInitObbl ::= ID:id ASSIGN Const:c                            {: RESULT = new IdListInitObbl(new IdInit(new Identifier(id) , c)); :}
+	| IdListInitObbl:idListInitObbl COMMA ID:id ASSIGN Const:c     {: RESULT = idListInitObbl.addNode(new IdInit(new Identifier(id) , c)); :}
+    ;
+
+Const ::= INTEGER_CONST:i   {:RESULT = new Const(i);:}
+    | REAL_CONST:r          {:RESULT = new Const(r);:}
+    | TRUE:t                {:RESULT = new Const(t);:}
+    | FALSE:f               {:RESULT = new Const(f);:}
+    | STRING_CONST:s        {:RESULT = new Const(s);:}
+    ;
+
+Fun ::= FUN ID:id LPAR ParamDeclList:pdl RPAR COLON Type:t
+		VarDeclList:vdl StatList:sl END FUN SEMI   {:RESULT = new Fun(new Identifier (id),pdl,t,vdl,sl);:}
+	| FUN ID:id LPAR ParamDeclList:pdl RPAR
+		VarDeclList:vdl StatList:sl END FUN SEMI   {:RESULT = new Fun(new Identifier (id),pdl,vdl,sl);:}
+    ;
+
+
+ParamDeclList ::= /*empty */            {:RESULT = null;:}
+	| NonEmptyParamDeclList:nepdl       {: RESULT = new ParamDeclList(nepdl);:}
+    ;
+
+NonEmptyParamDeclList ::= ParDecl:pl                              {: RESULT = new NonEmptyParamDeclList(pl); :}
+	| NonEmptyParamDeclList:nepdl COMMA ParDecl:pl                {: if(nepdl == null) nepdl = new NonEmptyParamDeclList(pl);
+	                                                                 else nepdl.addNode(pl);
+	                                                                 RESULT = nepdl;:}
+    ;
+
+ParDecl ::= Type:t ID:id                                            {:RESULT = new ParDecl(t,new Identifier(id));:}
+	| OUT Type:t ID:id                                              {:RESULT = new ParDecl(new InOut("out"),t,new Identifier(id));:}
+    ;
+
+StatList ::=  /* empty */                                       {:RESULT = null;:}
+	 | StatList:sl Stat:s                                       {:  if(sl == null) sl=new StatList(s);
+	                                                                else sl.addNode(s);
+	                                                                RESULT = sl;:}
+    ;
+
+Stat ::= IfStat:is SEMI                                {:RESULT = new Stat(is);:}
+	| WhileStat:ws SEMI                                {:RESULT = new Stat(ws);:}
+	| ReadStat:rs SEMI                                 {:RESULT = new Stat(rs);:}
+	| WriteStat:ws SEMI                                {:RESULT = new Stat(ws);:}
+	| AssignStat:as SEMI                               {:RESULT = new Stat(as);:}
+	| CallFun:cf SEMI                                  {:RESULT = new Stat(cf);:}
+	| RETURN Expr:e SEMI                               {:RESULT = new Stat(new ReturnStat(e));:}
+//	| /* empty */                                      {:RESULT = null;:}
+    ;
+
+IfStat ::= IF Expr:e THEN VarDeclList:vdl StatList:sl Else:el END IF    {: RESULT = new IfStat(e,vdl,sl,el);:}
+    ;
+
+Else ::= /* empty */                                    {:RESULT = null;:}
+	| ELSE VarDeclList:vdl  StatList:sl                 {:RESULT = new Else(vdl,sl);:}
+    ;
+
+WhileStat ::=  WHILE Expr:expr LOOP VarDeclList:vdl  StatList:statList END LOOP          {:RESULT = new WhileStat(expr,vdl,statList);:}
+    ;
+
+ReadStat ::= READ IdList:idList Expr:expr          {:RESULT = new ReadStat(idList, expr);:}
+	| READ IdList:idList                           {:RESULT = new ReadStat(idList);:}
+    ;
+
+IdList ::= ID:id                                     {:RESULT = new IdList(new Identifier(id));:}
+	| IdList:idList COMMA ID:id                      {:if(idList != null) idList = new IdList(new Identifier(id));
+	                                                    else idList.addNode(new Identifier(id));
+	                                                    RESULT = idList;:}
+    ;
+
+WriteStat ::=  WRITE Expr:expr                    {:RESULT = new WriteStat(expr,WriteType.WRITE);:}
+	| WRITELN Expr:expr                           {:RESULT = new WriteStat(expr,WriteType.WRITELN);:}
+	| WRITET Expr:expr                            {:RESULT = new WriteStat(expr,WriteType.WRITET);:}
+	| WRITEB Expr:expr                            {:RESULT = new WriteStat(expr,WriteType.WRITEB);:}
+    ;
+
+AssignStat ::=  ID:id ASSIGN Expr:expr              {:RESULT = new AssignStat(new Identifier(id), expr);:}
+    ;
+
+CallFun ::= ID:id LPAR ExprList:exprList RPAR       {:RESULT = new CallFun(new Identifier(id), exprList);:}
+	| ID:id LPAR RPAR                               {:RESULT = new CallFun(new Identifier(id));:}
+    ;
+
+ExprList ::= Expr:expr                              {:RESULT = new ExprList(expr);:}
+	| ExprList:exprList COMMA Expr:expr               {:  if(exprList == null ) exprList = new ExprList(expr);
+	                                                    else exprList.addNode(expr);
+	                                                    RESULT = exprList; :}
+
+	| OUTPAR ID:id                                  {: RESULT = new ExprList(new Identifier(new InOut("out"),id)); :}
+	| ExprList:exprList COMMA OUTPAR ID:id           {:  if(exprList==null) exprList=new ExprList(new Identifier(new InOut("out"),id));
+	                                                    else exprList.addNode(new Identifier(new InOut("out"),id));
+                                                        RESULT = exprList; :}
+    ;
+
+Expr ::= TRUE:t                                     {:RESULT = new Expr(t);:}
+	| FALSE:f                                       {:RESULT = new Expr(f);:}
+    | INTEGER_CONST:integer                         {:RESULT = new Expr(integer);:}
+	| REAL_CONST:real                               {:RESULT = new Expr(real);:}
+	| STRING_CONST:string                           {:RESULT = new Expr(string);:}
+	| ID:id                                         {:RESULT = new Expr(new Identifier(id));:}
+	| CallFun:callfun                               {:RESULT = new Expr(callfun);:}
+	| Expr:expr1  PLUS:s Expr:expr2                 {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  MINUS:s Expr:expr2                {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  TIMES:s Expr:expr2                {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  DIV:s Expr:expr2                  {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  DIVINT:s Expr:expr2               {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  AND:s Expr:expr2                  {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  POW:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  STR_CONCAT:s Expr:expr2            {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  OR:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  GT:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  GE:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  LT:s Expr:expr2                   {:RESULT = new Expr(expr1, s,expr2);:}
+	| Expr:expr1  LE:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  EQ:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| Expr:expr1  NE:s Expr:expr2                   {:RESULT = new Expr(expr1, s, expr2);:}
+	| MINUS:s Expr:expr                             {:RESULT = new Expr(s, expr);:}
+	| NOT:s Expr:expr                               {:RESULT = new Expr(s, expr);:}
+	| LPAR Expr:expr RPAR                           {:RESULT = new Expr(expr);:}
+	;

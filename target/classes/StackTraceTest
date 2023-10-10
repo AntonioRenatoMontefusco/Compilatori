@@ -1,0 +1,16 @@
+public class StackTracerTest {
+    public static void main(String[] args) throws Exception {
+        try {
+            Lexer lexer = new Lexer(new FileReader(args[0]));
+            parser p = new parser(lexer);
+            //p.parse();
+            System.out.println("L'output e' "+ p.debug_parse());// l'uso di p.debug_parse() al posto di p.parse() produce tutte le azioni del parser durante il riconoscimento
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+}

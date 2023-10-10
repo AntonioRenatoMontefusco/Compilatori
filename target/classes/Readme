@@ -1,0 +1,24 @@
+Project SDK: open-jdk 17
+Project Language Level: 16
+
+Comandi run:
+-Utilizzare il comando Maven 'Lexer' per poter generare il lexer, in alternativa lanciare il comando
+    C:\JFLEX\bin\jflex -d src\main\java srcjflexcup\fun.flex
+
+-Utilizzare il comando Maven 'Parser' per poter generare il parser, in alternativa lanciare il comando
+    java -jar C:\CUP\java-cup-11b.jar -destdir src\main\java\esercitazione5 srcjflexcup/fun.cup
+
+-Lanciare il comando per eseguire il dump
+    java -jar C:\CUP\java-cup-11b.jar -dump -destdir src\main\java\esercitazione5 srcjflexcup/fun.cup 2>dump
+
+
+
+
+
+
+
+Cambiamenti:
+-   Nel cup abbiamo cambiato il result per tutte le liste con non terminali -> epsilon
+-   Implementato una Interfaccia per il nodo Stat
+-   Visitor per scorrere tutto l'albero e creare le tabelle di scope
+
